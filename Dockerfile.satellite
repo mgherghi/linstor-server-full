@@ -77,7 +77,7 @@ COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/linstorpkgs/
 # Convenient packages for debugging:
 #   diffutils (diff), file, hostname, iputils (ping), jq, less
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which nvme-cli openssl lvm2 util-linux socat procps-ng && \
+  yum install -y which openssl lvm2 util-linux socat procps-ng && \
   yum install -y diffutils file hostname iputils jq less && \
   yum install -y /tmp/linstorpkgs/linstor-common*.rpm /tmp/linstorpkgs/linstor-satellite*.rpm && \
   yum clean all -y
