@@ -4,8 +4,6 @@ USER root
 RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
 RUN apt install drbd-utils linstor-satellite nvme-cli cryptsetup thin-provisioning-tools lvm2 bcache-tools zstd socat udev lsscsi -y
 
-#apt update -y && apt install software-properties-common -y && add-apt-repository ppa:linbit/linbit-drbd9-stack && apt update -y && apt install  drbd-utils linstor-satellite -y
-
 EXPOSE 3366/tcp 3367/tcp
 
 COPY scripts/entry.sh /
