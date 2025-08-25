@@ -9,4 +9,3 @@ EXPOSE 3370/tcp 3371/tcp
 COPY scripts/entry.sh /
 
 CMD ["startController"]
-ENTRYPOINT ["/usr/local/bin/k8s-await-election", "/entry.sh"]
