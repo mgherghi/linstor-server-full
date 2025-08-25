@@ -8,4 +8,4 @@ EXPOSE 3370/tcp 3371/tcp
 
 COPY scripts/entry.sh /
 
-CMD ["startController"]
+CMD ["systemctl", "restart", "linstor-controller"]
