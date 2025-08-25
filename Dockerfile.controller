@@ -1,17 +1,8 @@
-FROM debian:13-slim
+FROM debian:12-slim
 
-RUN apt-get update && apt-get install -y default-jre && apt-get clean
-
-COPY scripts/postinstall.sh /tmp
-COPY build/distributions/linstor-server.tar /tmp
-COPY scripts/linstor-controller.service /etc/systemd/system/
-
-RUN tar -xf /tmp/linstor-server.tar -C /usr/share
-RUN /tmp/postinstall.sh
-# cleanup
-RUN rm /tmp/linstor-server.tar /tmp/postinstall.sh
-
-RUN mkdir -p /var/log/linstor-controller
+USER root
+RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
+RUN apt install linstor-controller linstor-client python3-setuptools -y
 
 EXPOSE 3370/tcp
 
