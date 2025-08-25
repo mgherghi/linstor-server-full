@@ -7,5 +7,3 @@ RUN apt install linstor-controller linstor-client python3-setuptools -y
 EXPOSE 3370/tcp 3371/tcp
 
 COPY scripts/entry.sh /
-
-CMD ["systemctl", "restart", "linstor-controller"]
