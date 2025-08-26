@@ -1,42 +1,9 @@
-# Dockerfile.satellite
 FROM debian:13-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Base tools (udev present for blk events; socat etc. will be installed below)
-RUN apt update && apt install -y ca-certificates curl wget gnupg procps iproute2 udev tini && rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /etc/apt/keyrings && chmod 0755 /etc/apt/keyrings && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
-RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && apt update -y
-
-# Update and install satellite packages
-RUN apt update && apt install -y  drbd-utils bcache-tools lvm2 zstd socat udev lsscsi linstor-satellite nvme-cli cryptsetup thin-provisioning-tools && rm -rf /var/lib/apt/lists/*
-
-# Default client config (for linstor-client inside the satellite)
-RUN mkdir -p /etc/linstor && printf '%s\n' 'controllers = 4.0.1.7:3370' > /etc/linstor/linstor-client.conf
-
-# Healthcheck: try the satellite TCP port locally
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=5 CMD timeout 2 bash -lc '</dev/tcp/127.0.0.1/3366' || exit 1
-
-# Foreground entrypoint for satellite
-RUN printf '%s\n' '#!/bin/sh' \
-  'set -e' \
-  '' \
-  '# Prefer wrapper if present' \
-  'if [ -x /usr/bin/linstor-satellite ]; then' \
-  '  exec /usr/bin/linstor-satellite' \
-  'fi' \
-  '' \
-  '# Fallback: try to locate the JAR dynamically' \
-  'JAR=$(find /usr -type f -name "linstor-satellite*.jar" 2>/dev/null | head -n1)' \
-  'if [ -n "$JAR" ]; then' \
-  '  exec /usr/bin/java -XX:+ExitOnOutOfMemoryError -jar "$JAR"' \
-  'fi' \
-  '' \
-  'echo "ERROR: Could not find linstor-satellite wrapper or JAR" >&2' \
-  'exit 1' \
-  > /entrypoint.sh && chmod +x /entrypoint.sh
+USER root
+RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
+RUN apt install drbd-utils bcache-tools lvm2 zstd socat udev lsscsi nvme-cli cryptsetup thin-provisioning-tools linstor-satellite  -y
 
 
-ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=5 \
+  CMD bash -lc 'timeout 2 </dev/tcp/127.0.0.1/3366' || exit 1
