@@ -12,9 +12,8 @@ RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources 
 
 # Update and install satellite packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    drbd-utils linstor-satellite nvme-cli cryptsetup thin-provisioning-tools \
-    zstd socat udev lsscsi \
+RUN apt-get update && apt-get install -y  \
+    drbd-utils bcache-utils bcache-tools lvm2 zstd socat udev lsscsi linstor-satellite nvme-cli cryptsetup thin-provisioning-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Default client config (for linstor-client inside the satellite)
