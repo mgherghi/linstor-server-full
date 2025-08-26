@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Base tools (udev present for blk events; socat etc. will be installed below)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl wget gnupg procps iproute2 udev openjdk-17-jre-headless tini \
+    ca-certificates curl wget gnupg procps iproute2 udev openjdk-21-jre-headless tini \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
