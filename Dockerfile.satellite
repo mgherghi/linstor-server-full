@@ -1,12 +1,80 @@
+# Dockerfile.satellite
 FROM debian:13-slim
 
-USER root
-RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
-RUN apt install drbd-utils linstor-satellite nvme-cli cryptsetup thin-provisioning-tools lvm2 bcache-tools zstd socat udev lsscsi -y
+ENV DEBIAN_FRONTEND=noninteractive
 
-EXPOSE 3366/tcp 3367/tcp
+# Base tools (udev present for blk events; socat etc. will be installed below)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg procps iproute2 udev tini \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY scripts/entry.sh /
+# Add LINBIT key (from your pasted text)
+RUN mkdir -p /etc/apt/keyrings && \
+    chmod 0755 /etc/apt/keyrings && \
+    cat > /etc/apt/keyrings/linbit.asc <<'EOF'
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 
-CMD ["startSatellite"]
-ENTRYPOINT ["/entry.sh"]
+xsFNBGZsIboBEADLvvRG52QXsGL7d33xOYQzxjriCdLsXTnBhsC/bQc4dpQBfAp7
+FEYhp93NcrwwPXLp5thYHfg3RF/O5pbyvpAnKZJt0rXMEvwy2K3JVJL7ddYs4cU6
+I4m1n6W+YYQydEeMmZUFc77DNwQ74Dw3Xx/natz1dK2Y9S0pyBPb2ZMtWwDMuDpV
+P/Y/W/wuDMWusbtSjVb+4TXJy046vPBobzi2jtQyaPJFfqwRiYqJYrQmsnns7L3F
+ksd63Y4veqK9rvNiYDVXZNsXja0An59rUdwhMlHj/wJWhr23SnSbcQv3hkvY/I19
+YT5FD9Y9srmRG2tIiQbK2rAjLqjKNGvYINRBlwnLDCCnoiCLJTahi2CT90aOr0Ae
+7QKITi9cpDZJO+/vaLw7JnHEmhpt5W1WySFtSgSQWIYdkhF2Rx1aOkQwT/Ig6rDV
+tkA8CjJ4ACMYXAx+zh+pxIRg2JNkLoGdl7pc/+5f4VV9iup3VW5U9MoC3KzZBDGJ
+/DNF9x/1Rkf/H7tP3pYU3UmaPOCMvOx3zuwo1qqEUT9pKxybZo+lOPdNVgZbAuKY
+C2jJa3Mv64IqyBds9tfZY8Sj+pbhfSvgTSmXR0WARXPS3po1PjUicnrStc+cWfEY
+g7vh4Wn2EsExlgmdARvDl1TgENQCLshTI2jTIPu9XXUZlDVltGJZuGem4wARAQAB
+zSlMSU5CSVQgUGFja2FnZSBhbmQgUmVwb3NpdG9yeSBTaWduaW5nIEtlecLBjgQT
+AQoAOBYhBE5ThVRnJtE8tkmHLPwFox24Jv5IBQJmbCG6AhsDBQsJCAcCBhUKCQgL
+AgQWAgMBAh4BAheAAAoJEPwFox24Jv5IaTIP/0qHRPuK0cKPsMEw7Bx+y9liST9y
+XC6xEbcWEPm9qkjW73/ZdTLRKI4Ty9UGH7Q0zQ1otUdGYOolidtDAYKS2V3++PwQ
+mbESJJiKOeKs1rjXeEBUr0usyhsL3P4/hFLCMf1ctgZNWklanu/N/aMQVjTQoYJu
+rDCxq1y58/3hAyrWQ2kITHjVvpP5cXqXpDlwiLKy+oYNxvUdE6FUzNbuQ6htzWyQ
+ugmMyjjqjlfD6gC7OqDcXk9eUf7AHbgf5+UQ+RbjMZ+YBoH9gihL/1TI1Ith50NX
+5cVRMyscZ9inWFK8Fw2ubD8ZifmIQfrMZJMW0iajgJhX0GAqczl54Ihb08EODeRO
+82oOgoeIJ7H14y2WfYA7Pb2Zap6WLrvA+k3arsr94aSDGutpThTBABR9F7F3fOLo
+8dlv+jGXnsHtTeU9qh2+ZifyPZ3BVukyizoQk+TDxOavqNryQc7zLpwKsGymRJjP
+M3ODV1fUVm6hLgPSMJP0tLakvK76+o/RCr5z5gCUyxjnnV0pbkYLhhE7FtLeSoPb
+rxmNRzSFfdXk2uD1idlh54559JdSSh/HzqdZ1biizLs+xJK8JZPZI+3F/whVylwU
+iwOhLRojCowfN2DhiiAencH0fsjgec3PT51bdCU6agvH8f6l1ivAuRb1RGT9WGpo
+Xe+WxMjgfi4lbTsF
+=m29F
+-----END PGP PUBLIC KEY BLOCK-----
+EOF \
+    && chmod 0644 /etc/apt/keyrings/linbit.asc
+
+# Add LINBIT Deb822 source
+RUN cat > /etc/apt/sources.list.d/linbit.sources <<'EOF'
+Types: deb
+URIs: https://packages.linbit.com/public
+Suites: proxmox-9
+Components: drbd-9
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/linbit.asc
+EOF
+
+# Update and install satellite packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    drbd-utils linstor-satellite nvme-cli cryptsetup thin-provisioning-tools \
+    zstd socat udev lsscsi \
+    && rm -rf /var/lib/apt/lists/*
+
+# Default client config (for linstor-client inside the satellite)
+RUN mkdir -p /etc/linstor && \
+    printf '%s\n' \
+      'controllers = 4.0.1.7:3370' \
+      > /etc/linstor/linstor-client.conf
+
+# Healthcheck: try the satellite TCP port locally
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=5 \
+  CMD timeout 2 bash -lc '</dev/tcp/127.0.0.1/3366' || exit 1
+
+# Foreground entrypoint for satellite
+RUN printf '%s\n' '#!/bin/sh' \
+  'set -e' \
+  'exec /usr/bin/java -XX:+ExitOnOutOfMemoryError -jar /usr/share/linstor-satellite/linstor-satellite.jar' \
+  > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/tini","--"]
+CMD ["/entrypoint.sh"]
