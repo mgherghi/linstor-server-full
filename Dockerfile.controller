@@ -4,8 +4,8 @@ FROM debian:13-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Base tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl wget gnupg procps openjdk-21-jre-headless iproute2 tini \
+RUN apt-get update && apt-get install -y \
+    ca-certificates curl wget gnupg procps iproute2 tini \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
@@ -13,7 +13,7 @@ RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/
 
 
 # Update and install controller packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y  \
     linstor-controller linstor-client python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
