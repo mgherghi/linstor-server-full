@@ -4,11 +4,9 @@ USER root
 RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
 RUN apt install linstor-controller linstor-client python3-setuptools -y
 
-# Default client config pointing at your controllers
-RUN mkdir -p /etc/linstor && \
-    printf '%s\n' \
-      'controllers = 4.0.1.7:3370' \
-      > /etc/linstor/linstor-client.conf
+#EXPOSE 3370/tcp
+
+ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
 
 # Healthcheck hits the REST API ping
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=5 \
