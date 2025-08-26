@@ -5,10 +5,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Base tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl gnupg procps iproute2 tini \
+    ca-certificates curl wget gnupg procps iproute2 tini \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
+RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
+RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources
 
 
 # Update and install controller packages
