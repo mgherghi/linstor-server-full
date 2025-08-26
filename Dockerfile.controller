@@ -1,20 +1,8 @@
-# Dockerfile.controller
 FROM debian:13-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
 USER root
-
-# Base tools
-RUN apt-get update && apt-get install -y \
-    ca-certificates curl wget gnupg procps iproute2 tini \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
-
-# Update and install controller packages
-RUN apt update && apt install -y  \
-    linstor-controller linstor-client python3-setuptools \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt install linstor-controller linstor-client python3-setuptools -y
 
 # Default client config pointing at your controllers
 RUN mkdir -p /etc/linstor && \
@@ -26,25 +14,4 @@ RUN mkdir -p /etc/linstor && \
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=5 \
   CMD curl -fsS http://127.0.0.1:3370/v1/ping || exit 1
 
-# Foreground entrypoint for controller
-# (Runs the controller JAR directly so the container stays up)
-RUN printf '%s\n' '#!/bin/sh' \
-  'set -e' \
-  '' \
-  '# Prefer wrapper if present' \
-  'if [ -x /usr/bin/linstor-controller ]; then' \
-  '  exec /usr/bin/linstor-controller' \
-  'fi' \
-  '' \
-  '# Fallback: try to locate the JAR dynamically' \
-  'JAR=$(find /usr -type f -name "linstor-controller*.jar" 2>/dev/null | head -n1)' \
-  'if [ -n "$JAR" ]; then' \
-  '  exec /usr/bin/java -XX:+ExitOnOutOfMemoryError -jar "$JAR"' \
-  'fi' \
-  '' \
-  'echo "ERROR: Could not find linstor-controller wrapper or JAR" >&2' \
-  'exit 1' \
-  > /entrypoint.sh && chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
