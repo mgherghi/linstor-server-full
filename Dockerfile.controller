@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Base tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl wget gnupg procps iproute2 tini \
+    ca-certificates curl wget gnupg procps openjdk-17-jre-headless iproute2 tini \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
@@ -13,7 +13,7 @@ RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/
 
 
 # Update and install controller packages
-RUN apt-get update && apt-get install -y  \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     linstor-controller linstor-client python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
@@ -31,7 +31,20 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=5 \
 # (Runs the controller JAR directly so the container stays up)
 RUN printf '%s\n' '#!/bin/sh' \
   'set -e' \
-  'exec /usr/bin/java -XX:+ExitOnOutOfMemoryError -jar /usr/share/linstor-controller/linstor-controller.jar' \
+  '' \
+  '# Prefer wrapper if present' \
+  'if [ -x /usr/bin/linstor-controller ]; then' \
+  '  exec /usr/bin/linstor-controller' \
+  'fi' \
+  '' \
+  '# Fallback: try to locate the JAR dynamically' \
+  'JAR=$(find /usr -type f -name "linstor-controller*.jar" 2>/dev/null | head -n1)' \
+  'if [ -n "$JAR" ]; then' \
+  '  exec /usr/bin/java -XX:+ExitOnOutOfMemoryError -jar "$JAR"' \
+  'fi' \
+  '' \
+  'echo "ERROR: Could not find linstor-controller wrapper or JAR" >&2' \
+  'exit 1' \
   > /entrypoint.sh && chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/tini","--"]
