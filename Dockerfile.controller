@@ -2,18 +2,17 @@
 FROM debian:13-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
+USER root
 
 # Base tools
 RUN apt-get update && apt-get install -y \
     ca-certificates curl wget gnupg procps iproute2 tini \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /etc/apt/keyrings && chmod 0755 /etc/apt/keyrings && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
-RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && apt update -y
-
+RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
 
 # Update and install controller packages
-RUN apt-get update && apt-get install -y  \
+RUN apt update && apt install -y  \
     linstor-controller linstor-client python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
