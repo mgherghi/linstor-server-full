@@ -4,15 +4,15 @@ FROM debian:13-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Base tools (udev present for blk events; socat etc. will be installed below)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl wget gnupg procps iproute2 udev openjdk-21-jre-headless tini \
+RUN apt-get update && apt-get install -y  \
+    ca-certificates curl wget gnupg procps iproute2 udev tini \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc 
 RUN wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources 
 
 # Update and install satellite packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y  \
     drbd-utils bcache-tools lvm2 zstd socat udev lsscsi linstor-satellite nvme-cli cryptsetup thin-provisioning-tools \
     && rm -rf /var/lib/apt/lists/*
 
