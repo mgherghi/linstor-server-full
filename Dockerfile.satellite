@@ -6,7 +6,7 @@ RUN apt install drbd-utils bcache-tools lvm2 zstd socat udev lsscsi nvme-cli cry
 
 #EXPOSE 3370/tcp
 
-ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
+ENTRYPOINT ["/usr/share/linstor-server/bin/Satellite", "--logs=/var/log/linstor-satellite", "--config-directory=/etc/linstor"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=5 \
   CMD bash -lc 'timeout 2 </dev/tcp/127.0.0.1/3366' || exit 1
