@@ -11,7 +11,3 @@ RUN set -eux; \
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/usr/local/bin/docker-entrypoint-linstor-controller.sh"]
-
-# Healthcheck hits the REST API ping
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=5 \
-  CMD curl -fsS http://127.0.0.1:3370/v1/ping || exit 1
