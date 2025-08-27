@@ -2,14 +2,16 @@ FROM debian:13-slim
 
 USER root
 RUN apt update -y && apt install wget -y && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linbit.asc -O /etc/apt/keyrings/linbit.asc && wait && wget https://raw.githubusercontent.com/mgherghi/CalPoly_Infrastructure/refs/heads/main/Infrastructure/linstor.sources -O /etc/apt/sources.list.d/linstor.sources && wait && apt update -y
-RUN apt install linstor-controller linstor-client python3-setuptools -y
+RUN apt install linstor-controller tini linstor-client python3-setuptools -y
 
-#EXPOSE 3370/tcp
+# Fetch entrypoint with checksum verification
+RUN set -eux; \
+    curl -fsSL "$SCRIPT_URL" -o /usr/local/bin/docker-entrypoint-linstor-controller.sh; \
+    chmod +x /usr/local/bin/docker-entrypoint-linstor-controller.sh
 
-ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/usr/local/bin/docker-entrypoint-linstor-controller.sh"]
 
 # Healthcheck hits the REST API ping
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=5 \
   CMD curl -fsS http://127.0.0.1:3370/v1/ping || exit 1
-
-
